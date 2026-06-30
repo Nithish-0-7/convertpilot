@@ -36,12 +36,34 @@ function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0E14] text-white antialiased selection:bg-[#5B8CFF]/30 selection:text-white">
-      {/* Ambient background glow */}
+    <div className="min-h-screen bg-[#07090F] text-white antialiased selection:bg-[#5B8CFF]/30 selection:text-white [font-feature-settings:'ss01','cv11']">
+      {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[#5B8CFF]/10 blur-[140px]" />
-        <div className="absolute bottom-0 right-0 h-[400px] w-[600px] rounded-full bg-[#7C5BFF]/10 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.04)_1px,transparent_0)] [background-size:32px_32px]" />
+        {/* aurora blobs */}
+        <motion.div
+          aria-hidden
+          className="absolute -top-48 left-1/2 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[#5B8CFF]/[0.14] blur-[160px]"
+          animate={{ opacity: [0.7, 1, 0.7], scale: [1, 1.04, 1] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="absolute -bottom-32 -right-32 h-[520px] w-[720px] rounded-full bg-[#7C5BFF]/[0.13] blur-[150px]"
+          animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.06, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        <motion.div
+          aria-hidden
+          className="absolute top-1/3 -left-32 h-[420px] w-[620px] rounded-full bg-[#3DDC97]/[0.06] blur-[140px]"
+          animate={{ opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        />
+        {/* dot grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.035)_1px,transparent_0)] [background-size:34px_34px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_85%)]" />
+        {/* film grain */}
+        <div className="absolute inset-0 opacity-[0.025] mix-blend-overlay [background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")]" />
+        {/* top vignette */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
       </div>
 
       <div className="relative">
