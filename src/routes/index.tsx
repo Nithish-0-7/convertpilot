@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Landing from "@/components/audit/Landing";
 import Loading from "@/components/audit/Loading";
@@ -27,13 +27,49 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [phase, setPhase] = useState<"landing" | "loading" | "results">("landing");
   const [url, setUrl] = useState("");
-  const [score, setScore] = useState(47);
+  const [analysis, setAnalysis] = useState<{
+    score: number;
+    leaks: { title: string; teaser: string; severity: string; impact: string }[];
+  } | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [minDone, setMinDone] = useState(false);
+  const requestId = useRef(0);
 
-  const handleAnalyze = (input: string) => {
+  const handleAnalyze = useCallback(async (input: string) => {
+    const id = ++requestId.current;
     setUrl(input);
-    setScore(Math.floor(30 + Math.random() * 36));
+    setAnalysis(null);
+    setFetchError(null);
+    setMinDone(false);
     setPhase("loading");
-  };
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: input }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        score?: number;
+        leaks?: { title: string; teaser: string; severity: string; impact: string }[];
+      };
+      if (id !== requestId.current) return;
+      if (!res.ok || typeof data?.score !== "number" || !Array.isArray(data?.leaks)) {
+        setFetchError(data?.error || "Analysis failed. Please try again.");
+        return;
+      }
+      setAnalysis({ score: data.score, leaks: data.leaks });
+    } catch {
+      if (id !== requestId.current) return;
+      setFetchError("Network error. Please try again.");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "loading" || !minDone) return;
+    if (fetchError) setPhase("landing");
+    else if (analysis) setPhase("results");
+  }, [phase, analysis, fetchError, minDone]);
 
   return (
     <div className="min-h-screen bg-[#07090F] text-white antialiased selection:bg-[#5B8CFF]/30 selection:text-white [font-feature-settings:'ss01','cv11']">
@@ -82,7 +118,7 @@ function Index() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Landing onAnalyze={handleAnalyze} />
+              <Landing onAnalyze={handleAnalyze} initialError={fetchError} />
             </motion.div>
           )}
           {phase === "loading" && (
@@ -93,7 +129,7 @@ function Index() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <Loading url={url} onDone={() => setPhase("results")} />
+              <Loading url={url} onDone={() => setMinDone(true)} />
             </motion.div>
           )}
           {phase === "results" && (
@@ -104,7 +140,12 @@ function Index() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Results url={url} score={score} onReset={() => setPhase("landing")} />
+              <Results
+                url={url}
+                score={analysis?.score ?? 0}
+                leaks={analysis?.leaks}
+                onReset={() => setPhase("landing")}
+              />
             </motion.div>
           )}
         </AnimatePresence>
