@@ -16,6 +16,7 @@ type Analysis = {
 const GENERIC_ERROR = "Analysis failed. Please try again.";
 const FETCH_ERROR = "We couldn't access this website. Please check the URL and try again.";
 const INVALID_URL = "Please enter a valid website URL.";
+const RECOVERABLE_ERROR_STATUS = 422;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -249,18 +250,18 @@ export const Route = createFileRoute("/api/analyze")({
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
           console.error("GEMINI_API_KEY not configured");
-          return json({ error: GENERIC_ERROR }, 500);
+          return json({ error: GENERIC_ERROR }, RECOVERABLE_ERROR_STATUS);
         }
 
         const html = await fetchHtml(url);
-        if (!html) return json({ error: FETCH_ERROR }, 502);
+        if (!html) return json({ error: FETCH_ERROR }, RECOVERABLE_ERROR_STATUS);
 
         let site: ReturnType<typeof extractSiteContent>;
         try {
           site = extractSiteContent(html);
         } catch (err) {
           console.error("extractSiteContent failed", err);
-          return json({ error: FETCH_ERROR }, 502);
+          return json({ error: FETCH_ERROR }, RECOVERABLE_ERROR_STATUS);
         }
 
         let text = await callGemini(buildPrompt(url, site, false), apiKey);
@@ -271,12 +272,12 @@ export const Route = createFileRoute("/api/analyze")({
           parsed = text ? validateAnalysis(tryParseJson(text)) : null;
         }
 
-        if (!parsed) return json({ error: GENERIC_ERROR }, 502);
+        if (!parsed) return json({ error: GENERIC_ERROR }, RECOVERABLE_ERROR_STATUS);
 
         return json(parsed satisfies Analysis, 200);
         } catch (err) {
           console.error("/api/analyze uncaught error", err);
-          return json({ error: GENERIC_ERROR }, 502);
+          return json({ error: GENERIC_ERROR }, RECOVERABLE_ERROR_STATUS);
         }
       },
     },
