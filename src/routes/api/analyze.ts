@@ -55,7 +55,26 @@ async function fetchHtml(url: string): Promise<string | null> {
     if (!res.ok) return null;
     const ct = res.headers.get("content-type") ?? "";
     if (!ct.includes("text/html") && !ct.includes("application/xhtml")) return null;
-    return await res.text();
+    // Cap payload to keep cheerio + worker CPU within limits (some sites
+    // serve multi-MB HTML which can OOM/timeout the worker → CF 502).
+    const reader = res.body?.getReader();
+    if (!reader) return await res.text();
+    const decoder = new TextDecoder();
+    const MAX_BYTES = 512 * 1024;
+    let received = 0;
+    let html = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      received += value.byteLength;
+      html += decoder.decode(value, { stream: true });
+      if (received >= MAX_BYTES) {
+        try { await reader.cancel(); } catch { /* noop */ }
+        break;
+      }
+    }
+    html += decoder.decode();
+    return html;
   } catch {
     return null;
   } finally {
