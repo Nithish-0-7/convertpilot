@@ -247,6 +247,7 @@ export const Route = createFileRoute("/api/analyze")({
         const url = normalizeUrl((body as { url?: unknown })?.url);
         if (!url) return json({ error: INVALID_URL }, 400);
 
+        console.log("ENV:", process.env.GEMINI_API_KEY);
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
           console.error("GEMINI_API_KEY not configured");
