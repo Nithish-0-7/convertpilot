@@ -236,6 +236,7 @@ export const Route = createFileRoute("/api/analyze")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        try {
         let body: unknown;
         try {
           body = await request.json();
@@ -254,7 +255,13 @@ export const Route = createFileRoute("/api/analyze")({
         const html = await fetchHtml(url);
         if (!html) return json({ error: FETCH_ERROR }, 502);
 
-        const site = extractSiteContent(html);
+        let site: ReturnType<typeof extractSiteContent>;
+        try {
+          site = extractSiteContent(html);
+        } catch (err) {
+          console.error("extractSiteContent failed", err);
+          return json({ error: FETCH_ERROR }, 502);
+        }
 
         let text = await callGemini(buildPrompt(url, site, false), apiKey);
         let parsed = text ? validateAnalysis(tryParseJson(text)) : null;
@@ -267,6 +274,10 @@ export const Route = createFileRoute("/api/analyze")({
         if (!parsed) return json({ error: GENERIC_ERROR }, 502);
 
         return json(parsed satisfies Analysis, 200);
+        } catch (err) {
+          console.error("/api/analyze uncaught error", err);
+          return json({ error: GENERIC_ERROR }, 502);
+        }
       },
     },
   },
