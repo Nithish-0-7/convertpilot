@@ -27,10 +27,20 @@ function isValidUrl(v: string) {
   return /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i.test(v.trim());
 }
 
-export default function Landing({ onAnalyze }: { onAnalyze: (url: string) => void }) {
+export default function Landing({
+  onAnalyze,
+  initialError,
+}: {
+  onAnalyze: (url: string) => void;
+  initialError?: string | null;
+}) {
   const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [tIndex, setTIndex] = useState(0);
+
+  useEffect(() => {
+    if (initialError) setError(initialError);
+  }, [initialError]);
 
   useEffect(() => {
     const id = setInterval(() => setTIndex((i) => (i + 1) % TESTIMONIALS.length), 4500);
