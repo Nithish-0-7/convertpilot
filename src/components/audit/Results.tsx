@@ -9,7 +9,14 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-const LEAKS = [
+type LeakItem = {
+  title: string;
+  teaser: string;
+  severity: string;
+  impact: string;
+};
+
+const DEFAULT_LEAKS: LeakItem[] = [
   {
     title: "Weak Hero CTA",
     teaser: "Your primary call-to-action is easy to miss and unclear about the next step.",
@@ -165,14 +172,17 @@ function Gauge({ score }: { score: number }) {
 export default function Results({
   url,
   score,
+  leaks,
   onReset,
 }: {
   url: string;
   score: number;
+  leaks?: LeakItem[];
   onReset: () => void;
 }) {
   const [toast, setToast] = useState<string | null>(null);
   const color = scoreColor(score);
+  const items = leaks && leaks.length > 0 ? leaks : DEFAULT_LEAKS;
   const issues = 3 + Math.floor((100 - score) / 10);
 
   const showToast = (msg: string) => {
@@ -261,7 +271,7 @@ export default function Results({
           <span className="text-xs text-white/35">Free preview · 3 of 12</span>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {LEAKS.map((l, i) => (
+          {items.map((l, i) => (
             <motion.div
               key={l.title}
               initial={{ opacity: 0, y: 12 }}
