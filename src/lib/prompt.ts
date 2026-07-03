@@ -38,7 +38,7 @@ ${score.allowedRange[0]} to ${score.allowedRange[1]}
 TASK:
 Identify the TOP 3 revenue leaks on this page, ranked by likely revenue impact. Each leak must:
 - Point at something concrete and specific found in EXTRACTED_DATA (an actual heading, CTA text, missing field, stale footer year, broken link count, etc.)
-- Explain the mechanism of revenue loss in one sentence ("impact") — be concrete (e.g. "visitors bounce before finding a reason to trust the checkout" not "hurts conversion")
+- Estimate the potential monthly revenue leakage as a short monetary range for this issue only.
 - Assign severity based on how directly it blocks the primary conversion action (checkout, signup, lead form) vs. secondary polish
 
 Return JSON matching exactly:
@@ -49,7 +49,7 @@ Return JSON matching exactly:
       "title": "<short, specific, references the actual page>",
       "teaser": "<1-2 sentences, references specific extracted content, no invented facts>",
       "severity": "High" | "Medium" | "Low",
-      "impact": "<one concrete sentence on the revenue mechanism>"
+      "impact": "<estimated monthly revenue loss for THIS issue only, formatted like '~$3.2k/mo'. Estimate based on business size inferred from the website. Never explain the issue here—only return the monetary estimate.>"
     }
   ]
 }
