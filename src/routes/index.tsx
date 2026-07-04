@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Landing from "@/components/audit/Landing";
 import Loading from "@/components/audit/Loading";
 import Results from "@/components/audit/Results";
+import type { Analysis } from "@/components/lib/gemini";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,10 +28,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [phase, setPhase] = useState<"landing" | "loading" | "results">("landing");
   const [url, setUrl] = useState("");
-  const [analysis, setAnalysis] = useState<{
-    score: number;
-    leaks: { title: string; teaser: string; severity: string; impact: string }[];
-  } | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [minDone, setMinDone] = useState(false);
   const requestId = useRef(0);
@@ -48,7 +46,7 @@ function Index() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ url: input }),
       });
-      const data = (await res.json().catch(() => ({}))) as {
+      const data = (await res.json().catch(() => ({}))) as Analysis & {
         error?: string;
         score?: number;
         leaks?: { title: string; teaser: string; severity: string; impact: string }[];
@@ -58,7 +56,8 @@ function Index() {
         setFetchError(data?.error || "Analysis failed. Please try again.");
         return;
       }
-      setAnalysis({ score: data.score, leaks: data.leaks });
+      // Keep the full response (including `premium`) instead of cherry-picking fields
+      setAnalysis(data);
     } catch {
       if (id !== requestId.current) return;
       setFetchError("Network error. Please try again.");
@@ -140,10 +139,12 @@ function Index() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
+
               <Results
                 url={url}
                 score={analysis?.score ?? 0}
                 leaks={analysis?.leaks}
+                analysis={analysis}
                 onReset={() => setPhase("landing")}
               />
             </motion.div>

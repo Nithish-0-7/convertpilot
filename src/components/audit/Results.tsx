@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import PremiumReport from "../PremiumReport";
+import type { Analysis } from "../lib/gemini";
 import {
   AlertTriangle,
   Lock,
@@ -35,18 +37,6 @@ const DEFAULT_LEAKS: LeakItem[] = [
     severity: "Medium",
     impact: "~$3,100/mo",
   },
-];
-
-const LOCKED_SECTIONS = [
-  "Hero Rewrite",
-  "CTA Variants",
-  "Trust Improvements",
-  "Conversion Improvements",
-  "Mobile UX Review",
-  "SEO Basics",
-  "Accessibility Check",
-  "Priority Action Plan",
-  "Estimated Revenue Impact",
 ];
 
 function scoreColor(s: number) {
@@ -169,21 +159,104 @@ function Gauge({ score }: { score: number }) {
   );
 }
 
+function LockedPreview({ onUnlock }: { onUnlock: () => void }) {
+  const sections = [
+    "Hero Rewrite",
+    "CTA Variations",
+    "Trust Improvements",
+    "Conversion Improvements",
+    "Mobile UX Review",
+    "SEO Basics",
+    "Accessibility Issues",
+    "Priority Action Plan",
+    "Revenue Opportunity",
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className="mt-16"
+    >
+      <div className="mb-6 flex items-center gap-3">
+        <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#5B8CFF]/30 bg-gradient-to-br from-[#5B8CFF]/25 to-[#7C5BFF]/15 text-[#A9C2FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+            Premium Audit
+          </h2>
+          <p className="mt-0.5 text-sm text-white/50">
+            9 additional sections with page-specific rewrites and a prioritized fix plan.
+          </p>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.01] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-xl">
+        {/* ghost content */}
+        <div
+          aria-hidden
+          className="pointer-events-none grid select-none gap-4 p-6 opacity-60 blur-md sm:grid-cols-2"
+        >
+          {sections.map((s) => (
+            <div
+              key={s}
+              className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-5"
+            >
+              <div className="h-3 w-28 rounded bg-white/20" />
+              <div className="mt-3 h-2 w-full rounded bg-white/10" />
+              <div className="mt-2 h-2 w-5/6 rounded bg-white/10" />
+              <div className="mt-2 h-2 w-3/4 rounded bg-white/10" />
+            </div>
+          ))}
+        </div>
+
+        {/* lock overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-[#07090F]/30 via-[#07090F]/75 to-[#07090F] p-8 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#5B8CFF]/30 bg-gradient-to-br from-[#5B8CFF]/25 to-[#7C5BFF]/15 text-[#A9C2FF] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+            <Lock className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white">Unlock the full audit</h3>
+            <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-white/55">
+              Hero rewrite, CTA variations, and a prioritized action plan tailored to your site.
+            </p>
+          </div>
+          <button
+            onClick={onUnlock}
+            className="group/cta relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-b from-[#7AA2FF] to-[#4F7DF5] px-5 py-2.5 text-sm font-semibold text-[#07090F] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_0_0_1px_rgba(91,140,255,0.4),0_14px_40px_-10px_rgba(91,140,255,0.9)] transition-all duration-300 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_0_0_1px_rgba(91,140,255,0.6),0_18px_50px_-10px_rgba(91,140,255,1)] active:scale-[0.97]"
+          >
+            <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 transition-all duration-700 group-hover/cta:translate-x-full group-hover/cta:opacity-100" />
+            <Lock className="relative h-4 w-4" />
+            <span className="relative">Unlock Full Revenue Audit — $19</span>
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function Results({
   url,
   score,
   leaks,
+  analysis,
   onReset,
 }: {
   url: string;
   score: number;
   leaks?: LeakItem[];
+  analysis: Analysis | null;
   onReset: () => void;
 }) {
   const [toast, setToast] = useState<string | null>(null);
   const color = scoreColor(score);
   const items = leaks && leaks.length > 0 ? leaks : DEFAULT_LEAKS;
   const issues = 3 + Math.floor((100 - score) / 10);
+
+  // TODO: replace with real entitlement/auth state once Stripe is wired up.
+  const isPremium = true;
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -299,54 +372,13 @@ export default function Results({
         </div>
       </div>
 
-      {/* Locked preview */}
-      <div className="mt-16">
-        <div className="mb-5 flex items-end justify-between">
-          <h3 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/50">
-            Full Report Preview
-          </h3>
-          <span className="inline-flex items-center gap-1.5 text-xs text-white/40">
-            <Lock className="h-3 w-3" /> 9 sections locked
-          </span>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {LOCKED_SECTIONS.map((label, i) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 + i * 0.04, duration: 0.5 }}
-              className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl transition-all duration-500 hover:border-white/15"
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-sm font-semibold tracking-tight text-white/90">{label}</span>
-                <Lock className="h-3.5 w-3.5 text-white/30 transition-colors group-hover:text-white/60" />
-              </div>
-              <div
-                className="space-y-2.5 select-none"
-                style={{ filter: "blur(7px)", opacity: 0.7 }}
-                aria-hidden
-              >
-                <div className="h-2.5 w-3/4 rounded-full bg-white/20" />
-                <div className="h-2.5 w-full rounded-full bg-white/10" />
-                <div className="h-2.5 w-2/3 rounded-full bg-white/10" />
-                <div className="mt-3 h-20 w-full rounded-lg bg-gradient-to-br from-white/10 to-white/5" />
-                <div className="h-2.5 w-1/2 rounded-full bg-white/10" />
-                <div className="h-2.5 w-3/5 rounded-full bg-white/10" />
-              </div>
-              {/* fade */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#07090F] via-[#07090F]/80 to-transparent" />
-              {/* lock chip */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-white/70 backdrop-blur-xl transition-all duration-500 group-hover:border-[#5B8CFF]/40 group-hover:text-white">
-                  <Lock className="h-3 w-3" />
-                  Unlock to view
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+      {/* Full premium report / locked preview */}
+      {analysis?.premium &&
+        (isPremium ? (
+          <PremiumReport analysis={analysis} />
+        ) : (
+          <LockedPreview onUnlock={() => showToast("Checkout coming soon")} />
+        ))}
 
       {/* Sticky unlock CTA */}
       <motion.div
@@ -381,21 +413,21 @@ export default function Results({
       </motion.div>
 
       {/* Toast */}
-      <div className="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center">
-        <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.96 }}
-              transition={{ duration: 0.3 }}
-              className="rounded-full border border-white/15 bg-white/[0.08] px-4 py-2 text-sm text-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
-            >
-              {toast}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </section>
-  );
-}
+          <div className="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center">
+            <AnimatePresence>
+              {toast && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-full border border-white/15 bg-white/[0.08] px-4 py-2 text-sm text-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+                >
+                  {toast}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
+      );
+    }

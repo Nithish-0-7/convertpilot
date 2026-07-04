@@ -1,18 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { scrapeSite } from "../../lib/scraper";
-import { analyzeWithGemini } from "../../lib/gemini";
-
-type Leak = {
-  title: string;
-  teaser: string;
-  severity: "High" | "Medium" | "Low";
-  impact: string;
-};
-
-type Analysis = {
-  score: number;
-  leaks: Leak[];
-};
+import { analyzeWithGemini, type Analysis } from "../../lib/gemini";
 
 const GENERIC_ERROR = "Analysis failed. Please try again.";
 const FETCH_ERROR = "We couldn't access this website. Please check the URL and try again.";
